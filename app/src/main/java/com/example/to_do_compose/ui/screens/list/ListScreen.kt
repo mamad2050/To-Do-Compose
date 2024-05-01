@@ -50,6 +50,8 @@ fun ListFab(
         onClick = {
             onFabClicked(-1)
         },
+        shape = CircleShape,
+        containerColor = Color.topAppBarBackgroundColor
     ) {
         Icon(
             imageVector = Icons.Filled.Add,

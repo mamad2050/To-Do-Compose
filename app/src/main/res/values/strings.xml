@@ -3,4 +3,6 @@
     <string name="add_button">Add Button</string>
     <string name="search_action">Search</string>
     <string name="sort_action">Sort</string>
+    <string name="delete_action">Delete</string>
+    <string name="close">close</string>
 </resources>
