@@ -1,5 +1,6 @@
 package com.example.to_do_compose.ui.screens.list
 
+import androidx.compose.foundation.gestures.TransformableState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,19 +44,43 @@ import com.example.to_do_compose.data.models.Priority
 import com.example.to_do_compose.ui.theme.LARGE_PADDING
 import com.example.to_do_compose.ui.theme.TOP_APP_BAR_HEIGHT
 import com.example.to_do_compose.ui.theme.Typography
+import com.example.to_do_compose.ui.viewmodels.SharedViewModel
+import com.example.to_do_compose.utils.SearchAppBarState
+import com.example.to_do_compose.utils.TrailingIconState
 
 @Composable
-fun ListAppBar() {
-//    DefaultListAppBar(
-//        onSearchClicked = {},
-//        onSortClicked = {},
-//        onDeleteClicked = {}
-//    )
-    SearchAppBar(
-        text = "",
-        onTextChange = {},
-        onCloseClicked = {},
-        onSearchClicked = {})
+fun ListAppBar(
+    sharedViewModel: SharedViewModel,
+    searchAppBarState: SearchAppBarState,
+    searchTextState: String
+) {
+    when (searchAppBarState) {
+
+        SearchAppBarState.CLOSED ->
+            DefaultListAppBar(
+                onSearchClicked = {
+                    sharedViewModel.searchAppBarState.value =
+                        SearchAppBarState.OPENED
+                },
+                onSortClicked = {},
+                onDeleteClicked = {}
+            )
+
+        else ->
+            SearchAppBar(
+                text = searchTextState,
+                onTextChange = { newText ->
+                    sharedViewModel.searchTextState.value = newText
+                },
+                onCloseClicked = {
+                    sharedViewModel.searchAppBarState.value =
+                        SearchAppBarState.CLOSED
+
+                    sharedViewModel.searchTextState.value = ""
+
+                },
+                onSearchClicked = {})
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,7 +212,6 @@ fun DeleteAction(onDeleteClicked: () -> Unit) {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchAppBar(
     text: String,
@@ -195,6 +219,10 @@ fun SearchAppBar(
     onCloseClicked: () -> Unit,
     onSearchClicked: (String) -> Unit,
 ) {
+
+    var trailingIconState by remember {
+        mutableStateOf(TrailingIconState.READY_TO_DELETE)
+    }
 
     Surface(
         modifier = Modifier
@@ -204,13 +232,21 @@ fun SearchAppBar(
         shadowElevation = 2.dp,
     ) {
         TextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TOP_APP_BAR_HEIGHT),
             value = text,
             onValueChange = {
                 onTextChange(it)
             },
-            colors = TextFieldDefaults.textFieldColors(
-                containerColor = Color.topAppBarBackgroundColor
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                cursorColor = Color.topAppBarContentColor,
+                focusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
             ),
             placeholder = {
                 Text(
@@ -237,7 +273,23 @@ fun SearchAppBar(
             },
             trailingIcon = {
                 IconButton(
-                    onClick = { onCloseClicked() }
+                    onClick = {
+                        when (trailingIconState) {
+                            TrailingIconState.READY_TO_DELETE -> {
+                                onTextChange("")
+                                trailingIconState = TrailingIconState.READY_TO_CLOSE
+                            }
+
+                            TrailingIconState.READY_TO_CLOSE -> {
+                                if (text.isNotEmpty()) {
+                                    onTextChange("")
+                                } else {
+                                    onCloseClicked()
+                                    trailingIconState = TrailingIconState.READY_TO_DELETE
+                                }
+                            }
+                        }
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
